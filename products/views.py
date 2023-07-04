@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q
+from django.db.models.functions import Lower
 from .models import Product, Category
 
 def all_products(request):
@@ -12,6 +13,7 @@ def all_products(request):
     sort = None
     direction = None
 
+    # sort by options (e.g. price, rating..) - main-nav.html
     if request.GET:
         if 'sort' in request.GET:
             sortkey = request.GET['sort']
@@ -19,6 +21,7 @@ def all_products(request):
             if sortkey == 'name':
                 sortkey = 'lower_name'
                 products = products.annotate(lower_name=Lower('name'))
+            # sort by category name instead of category id (default)    
             if sortkey == 'Category':
                 sortkey = 'category__name'
 
@@ -28,11 +31,13 @@ def all_products(request):
                     sortkey = f'-{sortkey}'
             products = products.order_by(sortkey)
 
+        # main-nav.html
         if 'category' in request.GET:
             categories = request.GET['category'].split(',')
             products = products.filter(category__name__in=categories)
             categories = Category.objects.filter(name__in=categories)
 
+        # entered word - base.html
         if 'q' in request.GET:
             query = request.GET['q']
             if not query:
